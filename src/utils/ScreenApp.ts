@@ -1,3 +1,9 @@
+declare global {
+  interface Window {
+    ScreenApp: any;
+  }
+}
+
 interface RecordingCallback {
   id: string;
   url: string;

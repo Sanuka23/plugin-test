@@ -12,12 +12,6 @@ interface ScreenAppConstructor {
   new (token: string, callback: (data: { id: string; url: string }) => void): ScreenAppInstance;
 }
 
-declare global {
-  interface Window {
-    ScreenApp: ScreenAppConstructor;
-  }
-}
-
 function App() {
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
