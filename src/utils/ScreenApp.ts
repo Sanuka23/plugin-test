@@ -1,3 +1,5 @@
+import { loadScreenAppScript } from './loadScreenApp';
+
 declare global {
   interface Window {
     ScreenApp: any;
@@ -21,10 +23,8 @@ export class ScreenApp {
 
   async mount(selector: string): Promise<void> {
     try {
-      if (!window.ScreenApp) {
-        throw new Error('ScreenApp not loaded. Please ensure the script is loaded properly.');
-      }
-
+      await loadScreenAppScript();
+      
       console.log('Creating ScreenApp instance with token:', this.apiKey);
       this.screenAppInstance = new window.ScreenApp(this.apiKey, this.finishRecordingCallback);
       
