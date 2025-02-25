@@ -1,0 +1,140 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark Theme with Light Text */
+body {
+  background: #181818;
+  color: #e0e0e0;
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Card with Glass Effect */
+.container {
+  max-width: 500px;
+}
+
+.card {
+  background: rgba(30, 30, 30, 0.9);
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+/* Input Fields */
+.form-control {
+  background: #252525;
+  border: 2px solid #00e0e6;
+  color: #ffffff !important;
+  caret-color: #00e0e6;
+  transition: all 0.3s ease-in-out;
+}
+
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.form-control:focus {
+  background: #303030;
+  border-color: #00e0e6;
+  color: #ffffff;
+}
+
+.form-label {
+  color: #ffffff !important;
+}
+
+h2 {
+  color: #ffffff;
+}
+
+/* Buttons */
+.btn-custom {
+  background: #00e0e6;
+  color: #181818 !important;
+  padding: 10px 20px;
+  border-radius: 30px;
+  transition: all 0.3s ease-in-out;
+  font-weight: bold;
+  width: 100%;
+}
+
+.btn-custom:hover {
+  background: #00ffff;
+  transform: scale(1.05);
+}
+
+/* Alerts */
+.alert {
+  border-radius: 10px;
+  padding: 10px;
+  font-weight: bold;
+  text-align: center;
+  color: #ffffff;
+}
+
+.alert-info {
+  background: #00e0e6;
+  border: none;
+}
+
+.alert-danger {
+  background: #ff4d4d;
+  border: none;
+}
+
+/* Hidden Elements */
+.hidden {
+  display: none;
+}
+
+/* Link Styling */
+#url {
+  color: #00e0e6;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+#url:hover {
+  text-decoration: underline;
+}
