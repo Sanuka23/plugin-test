@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { ScreenApp } from './utils/ScreenApp';
 import './App.css';
 
 // Define the ScreenApp type
@@ -22,7 +23,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [recordingData, setRecordingData] = useState<{ id: string; url: string } | null>(null);
-  const [screenAppInstance, setScreenAppInstance] = useState<ScreenAppInstance | null>(null);
+  const screenAppRef = useRef<ScreenApp | null>(null);
 
   useEffect(() => {
     // Load ScreenApp script
@@ -32,10 +33,9 @@ function App() {
         script.src = 'https://dev.screenapp.io/app/plugin-6.20.12.bundle.js';
         script.async = true;
         
-        // Create a promise to wait for script load
-        const scriptLoadPromise = new Promise((resolve, reject) => {
-          script.onload = resolve;
-          script.onerror = reject;
+        const scriptLoadPromise = new Promise<void>((resolve, reject) => {
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load ScreenApp script'));
         });
 
         document.body.appendChild(script);
@@ -57,9 +57,8 @@ function App() {
     loadScreenAppScript();
 
     return () => {
-      // Cleanup
-      if (screenAppInstance) {
-        screenAppInstance.unMount();
+      if (screenAppRef.current) {
+        screenAppRef.current.unMount();
       }
     };
   }, []);
@@ -77,18 +76,8 @@ function App() {
         throw new Error('Token is required to load the plugin.');
       }
 
-      if (!window.ScreenApp) {
-        throw new Error('ScreenApp plugin not loaded properly.');
-      }
-
-      console.log('Creating ScreenApp instance with token:', tokenValue);
-      const instance = new window.ScreenApp(tokenValue, finishRecordingCallback);
-      setScreenAppInstance(instance);
-      
-      console.log('Mounting ScreenApp...');
-      await instance.mount('#screenapp-plugin');
-      
-      console.log('ScreenApp mounted successfully');
+      screenAppRef.current = new ScreenApp(tokenValue, finishRecordingCallback);
+      await screenAppRef.current.mount('#screen-app-plugin');
     } catch (err) {
       console.error('Plugin initialization error:', err);
       setError(err instanceof Error ? err.message : 'Failed to initialize plugin');
@@ -157,7 +146,7 @@ function App() {
           </div>
         )}
 
-        <div id="screenapp-plugin" className="mt-4"></div>
+        <div id="screen-app-plugin" className="mt-4"></div>
       </div>
     </div>
   );
