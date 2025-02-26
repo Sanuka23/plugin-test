@@ -1,149 +1,96 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { ScreenApp } from './utils/ScreenApp';
-import './App.css';
+import { useState, useEffect } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-// Define the ScreenApp type
-interface ScreenAppInstance {
-  mount: (selector: string) => Promise<void>;
-  unMount: () => void;
+declare global {
+  interface Window {
+    ScreenApp: {
+      new (token: string, callback: (data: { id: string; url: string }) => void): {
+        mount: (selector: string) => Promise<void>;
+      };
+    };
+  }
 }
 
-interface ScreenAppConstructor {
-  new (token: string, callback: (data: { id: string; url: string }) => void): ScreenAppInstance;
-}
-
-function App() {
-  const [token, setToken] = useState('');
+const App = () => {
+  const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [recordingData, setRecordingData] = useState<{ id: string; url: string } | null>(null);
-  const screenAppRef = useRef<ScreenApp | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [recordingId, setRecordingId] = useState<string | null>(null);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load ScreenApp script
-    const loadScreenAppScript = async () => {
-      try {
-        const script = document.createElement('script');
-        script.src = 'https://dev.screenapp.io/app/plugin-6.20.12.bundle.js';
-        script.async = true;
-        
-        const scriptLoadPromise = new Promise<void>((resolve, reject) => {
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Failed to load ScreenApp script'));
-        });
-
-        document.body.appendChild(script);
-        await scriptLoadPromise;
-
-        // Get token from URL if present
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlToken = urlParams.get('token');
-        if (urlToken) {
-          setToken(urlToken);
-          await loadPlugin(urlToken);
-        }
-      } catch (err) {
-        console.error('Failed to load ScreenApp script:', err);
-        setError('Failed to load ScreenApp plugin');
-      }
-    };
-
-    loadScreenAppScript();
-
-    return () => {
-      if (screenAppRef.current) {
-        screenAppRef.current.unMount();
-      }
-    };
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromURL = urlParams.get("token");
+    if (tokenFromURL) {
+      setToken(tokenFromURL);
+      loadPlugin(tokenFromURL);
+    }
   }, []);
 
-  const finishRecordingCallback = (data: { id: string; url: string }) => {
-    setRecordingData(data);
-  };
-
   const loadPlugin = async (tokenValue: string) => {
-    setError('');
     setLoading(true);
+    setErrorMessage("");
 
     try {
       if (!tokenValue) {
-        throw new Error('Token is required to load the plugin.');
+        throw new Error("Token is required to load the plugin.");
       }
 
-      screenAppRef.current = new ScreenApp(tokenValue, finishRecordingCallback);
-      await screenAppRef.current.mount('#screen-app-plugin');
-    } catch (err) {
-      console.error('Plugin initialization error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initialize plugin');
+      console.log("Initializing ScreenApp with token:", tokenValue);
+      const screenAppInstance = new window.ScreenApp(tokenValue, finishRecordingCallback);
+      await screenAppInstance.mount("#screenapp-plugin");
+
+      console.log("ScreenApp successfully loaded.");
+    } catch (error: unknown) {
+      console.error("Error loading plugin:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to load plugin";
+      setErrorMessage(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  const finishRecordingCallback = ({ id, url }: { id: string; url: string }) => {
+    setRecordingId(id);
+    setRecordingUrl(url);
+  };
+
   return (
-    <div className="container">
-      <div className="card">
-        <h2 className="text-center mb-4">ScreenApp Plugin Demo</h2>
+    <div className="d-flex justify-content-center align-items-center vh-100" style={{ backgroundColor: "#181818" }}>
+      <div className="card p-4" style={{ background: "rgba(30,30,30,0.9)", color: "#e0e0e0", maxWidth: "500px" }}>
+        <h2 className="text-center">ScreenApp Plugin Demo</h2>
 
-        <div id="tokenInputSection" className={recordingData ? 'hidden' : ''}>
-          <form id="pluginForm" onSubmit={(e) => {
-            e.preventDefault();
-            loadPlugin(token);
-          }}>
-            <div className="mb-3">
-              <label htmlFor="token" className="form-label">Enter Your Token:</label>
-              <input
-                type="text"
-                className="form-control"
-                id="token"
-                name="token"
-                placeholder="Enter your token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-              />
-            </div>
-            <button
-              type="submit"
-              className="btn btn-custom"
-              id="loadButton"
-              disabled={loading}
-            >
-              Load Plugin
-            </button>
-          </form>
-
-          {loading && (
-            <div className="alert alert-info mt-3" role="alert">
-              Initializing plugin...
-            </div>
-          )}
-          
-          {error && (
-            <div className="alert alert-danger mt-3" role="alert">
-              {error}
-            </div>
-          )}
+        <div className="mb-3">
+          <label className="form-label">Enter Your Token:</label>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Enter your token"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+          />
         </div>
 
-        {recordingData && (
-          <div id="callbackOutputSection" className="mt-4">
-            <div className="mb-3">
-              <label className="form-label">Recording ID:</label>
-              <span id="recID" className="form-control-plaintext">{recordingData.id}</span>
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Recording URL:</label>
-              <a href={recordingData.url} id="url" target="_blank" rel="noopener noreferrer" className="form-control-plaintext">
-                {recordingData.url}
-              </a>
-            </div>
+        <button className="btn btn-primary w-100" onClick={() => loadPlugin(token)} disabled={loading}>
+          {loading ? "Loading..." : "Load Plugin"}
+        </button>
+
+        {errorMessage && <div className="alert alert-danger mt-3">{errorMessage}</div>}
+
+        {recordingId && (
+          <div className="mt-4">
+            <h5>Recording Info</h5>
+            <p><strong>ID:</strong> {recordingId}</p>
+            <p>
+              <strong>URL:</strong> <a href={recordingUrl!} target="_blank" rel="noopener noreferrer">{recordingUrl}</a>
+            </p>
           </div>
         )}
 
-        <div id="screen-app-plugin" className="mt-4"></div>
+        <div id="screenapp-plugin" className="mt-4"></div>
       </div>
     </div>
   );
-}
+};
 
 export default App;
