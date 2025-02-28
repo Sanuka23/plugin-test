@@ -1,58 +1,83 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import ScreenApp from "./services/ScreenApp";
 
 declare global {
   interface Window {
     ScreenApp: {
       new (token: string, callback: (data: { id: string; url: string }) => void): {
         mount: (selector: string) => Promise<void>;
+        unMount: () => void;
       };
     };
   }
 }
 
 const App = () => {
-  const [token, setToken] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [token, setToken] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const screenAppRef = useRef<ScreenApp | null>(null);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromURL = urlParams.get("token");
     if (tokenFromURL) {
       setToken(tokenFromURL);
-      loadPlugin(tokenFromURL);
     }
   }, []);
 
-  const loadPlugin = async (tokenValue: string) => {
+  const loadScript = useCallback((): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const existingScript = document.querySelector("script[src='https://dev.screenapp.io/app/plugin-6.20.12.bundle.js']");
+      if (existingScript) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://dev.screenapp.io/app/plugin-6.20.12.bundle.js";
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load script"));
+      document.body.appendChild(script);
+    });
+  }, []);
+
+  const finishRecordingCallback = useCallback(({ id, url }: { id: string; url: string }) => {
+    setRecordingId(id);
+    setRecordingUrl(url);
+  }, []);
+
+  const handleLoadPlugin = async () => {
     setLoading(true);
     setErrorMessage("");
 
     try {
-      if (!tokenValue) {
+      if (!token) {
         throw new Error("Token is required to load the plugin.");
       }
 
-      console.log("Initializing ScreenApp with token:", tokenValue);
-      const screenAppInstance = new window.ScreenApp(tokenValue, finishRecordingCallback);
-      await screenAppInstance.mount("#screenapp-plugin");
+      await loadScript();
+      
+      if (!window.ScreenApp) {
+        throw new Error("ScreenApp script failed to load.");
+      }
 
-      console.log("ScreenApp successfully loaded.");
-    } catch (error: unknown) {
+      screenAppRef.current = new ScreenApp(token, finishRecordingCallback);
+      await screenAppRef.current.mount("#screenapp-plugin");
+
+      // Simulate successful recording for testing
+      setRecordingId("test-123");
+      setRecordingUrl("https://example.com/recording");
+    } catch (error) {
       console.error("Error loading plugin:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load plugin";
-      setErrorMessage(errorMessage);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to load plugin");
     } finally {
       setLoading(false);
     }
-  };
-
-  const finishRecordingCallback = ({ id, url }: { id: string; url: string }) => {
-    setRecordingId(id);
-    setRecordingUrl(url);
   };
 
   return (
@@ -71,7 +96,7 @@ const App = () => {
           />
         </div>
 
-        <button className="btn btn-primary w-100" onClick={() => loadPlugin(token)} disabled={loading}>
+        <button className="btn btn-primary w-100" onClick={handleLoadPlugin} disabled={loading}>
           {loading ? "Loading..." : "Load Plugin"}
         </button>
 
