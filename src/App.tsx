@@ -31,14 +31,14 @@ const App = () => {
 
   const loadScript = useCallback((): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const existingScript = document.querySelector("script[src='https://dev.screenapp.io/app/plugin-6.20.12.bundle.js']");
+      const existingScript = document.querySelector("script[src='https://dev.screenapp.io/app/plugin-6.20.17.bundle.js']");
       if (existingScript) {
         resolve();
         return;
       }
 
       const script = document.createElement("script");
-      script.src = "https://dev.screenapp.io/app/plugin-6.20.12.bundle.js";
+      script.src = "https://dev.screenapp.io/app/plugin-6.20.17.bundle.js";
       script.async = true;
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("Failed to load script"));
