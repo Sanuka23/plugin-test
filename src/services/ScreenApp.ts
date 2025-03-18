@@ -26,6 +26,11 @@ export default class ScreenApp {
       }
 
       this.screenAppInstance = new window.ScreenApp(this.token, this.finishRecordingCallback);
+      
+      if (!this.screenAppInstance) {
+        throw new Error("Failed to create ScreenApp instance.");
+      }
+      
       await this.screenAppInstance.mount(this.parentElementSelector);
     } catch (error) {
       console.error("Error mounting plugin:", error);
