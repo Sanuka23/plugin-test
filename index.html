@@ -4,35 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ScreenApp Plugin</title>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="src/main.tsx"></script>
     
     <!-- ScreenApp Plugin Installation -->
     <!-- Step 1: Add this script to your website's HTML -->
     <!-- Current version: 6.22.0 -->
     <script
         charset="UTF-8" type="text/javascript"
-        src="https://screenapp.io/app/plugin-latest.bundle.js">
+        src="https://screenapp.io/app/plugin-latest.bundle.js"
+        id="screenapp-script"
+        onload="initScreenApp()">
     </script>
-</head>
-<body>
-    <div id="root"></div>
-    <script type="module" src="src/main.tsx"></script>
     
     <!-- Step 2: Add the initialization code -->
     <script>
-        // This function will be called when a recording is completed
-        window.screenAppCallback = function({ id, url }) {
-            // You can customize this function to handle the recording
-            console.log('Recording completed!', { id, url });
-        };
-
-        // Initialize the ScreenApp plugin
-        window.loadScreenApp = function(token) {
-            // Create a new instance with the provided token
-            const screenApp = new window.ScreenApp(token, window.screenAppCallback);
+        // Initialize functions after the plugin script is loaded
+        function initScreenApp() {
+            console.log("ScreenApp plugin script loaded");
             
-            // Mount the plugin to the specified container element
-            screenApp.mount("#screenapp-plugin");
-        };
+            // This function will be called when a recording is completed
+            window.screenAppCallback = function({ id, url }) {
+                // You can customize this function to handle the recording
+                console.log('Recording completed!', { id, url });
+            };
+
+            // Initialize the ScreenApp plugin
+            window.loadScreenApp = function(token) {
+                try {
+                    if (typeof window.ScreenApp !== 'function') {
+                        console.error('ScreenApp is not a constructor function:', typeof window.ScreenApp);
+                        throw new Error("ScreenApp is not properly loaded. Please try again.");
+                    }
+                    
+                    // Create a new instance with the provided token
+                    const screenApp = new window.ScreenApp(token, window.screenAppCallback);
+                    
+                    // Mount the plugin to the specified container element
+                    screenApp.mount("#screenapp-plugin");
+                    
+                    return true;
+                } catch (error) {
+                    console.error("Error initializing ScreenApp:", error);
+                    throw error;
+                }
+            };
+        }
     </script>
 </body>
 </html>

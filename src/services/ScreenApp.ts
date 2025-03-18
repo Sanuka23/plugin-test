@@ -3,6 +3,10 @@ interface ScreenAppInstance {
   unMount: () => void;
 }
 
+interface ScreenAppConstructor {
+  new (token: string, callback: (data: { id: string; url: string }) => void): ScreenAppInstance;
+}
+
 export default class ScreenApp {
   private token: string;
   private parentElementSelector?: string;
@@ -21,11 +25,18 @@ export default class ScreenApp {
     this.parentElementSelector = parentElementSelector || "#screenapp-plugin";
 
     try {
-      if (!window.ScreenApp) {
-        throw new Error("ScreenApp library not loaded.");
+      if (typeof window.ScreenApp !== 'function') {
+        console.error('ScreenApp is not a constructor:', typeof window.ScreenApp);
+        throw new Error("ScreenApp constructor not found. Make sure the script is loaded.");
       }
 
-      this.screenAppInstance = new window.ScreenApp(this.token, this.finishRecordingCallback);
+      // Create a new instance of ScreenApp
+      try {
+        this.screenAppInstance = new window.ScreenApp(this.token, this.finishRecordingCallback);
+      } catch (err) {
+        console.error('Error creating ScreenApp instance:', err);
+        throw new Error("Failed to create ScreenApp instance. Please check your token and try again.");
+      }
       
       if (!this.screenAppInstance) {
         throw new Error("Failed to create ScreenApp instance.");

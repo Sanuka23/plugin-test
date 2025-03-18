@@ -4,8 +4,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 declare global {
   interface Window {
     ScreenApp: any;
-    loadScreenApp: (token: string) => void;
+    loadScreenApp: (token: string) => boolean;
     screenAppCallback: (data: { id: string; url: string }) => void;
+    initScreenApp: () => void;
   }
 }
 
@@ -15,6 +16,47 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const [scriptLoaded, setScriptLoaded] = useState<boolean>(false);
+
+  // Check if the script is loaded
+  useEffect(() => {
+    const checkScriptLoaded = () => {
+      if (typeof window.ScreenApp !== 'undefined') {
+        console.log("ScreenApp script is loaded");
+        setScriptLoaded(true);
+        return true;
+      }
+      return false;
+    };
+
+    // Check initially
+    if (!checkScriptLoaded()) {
+      // Set up a listener for the script load event
+      const onScriptLoad = () => {
+        checkScriptLoaded();
+      };
+
+      // Try to find the script element
+      const scriptElement = document.getElementById('screenapp-script');
+      if (scriptElement) {
+        scriptElement.addEventListener('load', onScriptLoad);
+      }
+
+      // Also check periodically
+      const interval = setInterval(() => {
+        if (checkScriptLoaded()) {
+          clearInterval(interval);
+        }
+      }, 1000);
+
+      return () => {
+        clearInterval(interval);
+        if (scriptElement) {
+          scriptElement.removeEventListener('load', onScriptLoad);
+        }
+      };
+    }
+  }, []);
 
   // Override the global callback to update our state
   useEffect(() => {
@@ -37,6 +79,27 @@ const App = () => {
     };
   }, []);
 
+  const reloadPlugin = () => {
+    // Try to reload the plugin script
+    const scriptElement = document.getElementById('screenapp-script');
+    if (scriptElement) {
+      scriptElement.remove();
+    }
+
+    const newScript = document.createElement('script');
+    newScript.id = 'screenapp-script';
+    newScript.charset = 'UTF-8';
+    newScript.src = 'https://screenapp.io/app/plugin-latest.bundle.js';
+    newScript.onload = () => {
+      if (window.initScreenApp) {
+        window.initScreenApp();
+        setScriptLoaded(true);
+        setErrorMessage("");
+      }
+    };
+    document.body.appendChild(newScript);
+  };
+
   const handleStartRecording = async () => {
     setLoading(true);
     setErrorMessage("");
@@ -46,8 +109,8 @@ const App = () => {
         throw new Error("Please enter your ScreenApp token");
       }
 
-      if (!window.loadScreenApp) {
-        throw new Error("ScreenApp script failed to load.");
+      if (!scriptLoaded || typeof window.loadScreenApp !== 'function') {
+        throw new Error("ScreenApp script not loaded correctly. Try reloading.");
       }
 
       // Use the global function from index.html
@@ -80,9 +143,15 @@ const App = () => {
           Click the button below to start recording your screen and audio.
         </p>
 
-        <button className="btn btn-primary w-100" onClick={handleStartRecording} disabled={loading}>
+        <button className="btn btn-primary w-100" onClick={handleStartRecording} disabled={loading || !scriptLoaded}>
           {loading ? "Loading..." : "Start Recording"}
         </button>
+
+        {!scriptLoaded && (
+          <button className="btn btn-secondary w-100 mt-3" onClick={reloadPlugin}>
+            Reload Plugin Script
+          </button>
+        )}
 
         {errorMessage && <div className="alert alert-danger mt-3">{errorMessage}</div>}
 
