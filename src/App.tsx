@@ -4,8 +4,11 @@ import "bootstrap/dist/css/bootstrap.min.css";
 declare global {
   interface Window {
     ScreenApp: any;
-    loadScreenApp: (token: string) => void;
+    loadScreenApp: (token: string) => boolean;
+    screenAppCallback: (data: { id: string; url: string }) => void;
     updateRecordingInfo: (id: string, url: string) => void;
+    onScreenAppLoaded: () => void;
+    onScreenAppError: (error: string) => void;
   }
 }
 
@@ -15,13 +18,37 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const [scriptLoaded, setScriptLoaded] = useState<boolean>(false);
 
-  // Register the callback for the screenAppCallback function
+  // Set up callbacks for the ScreenApp plugin
   useEffect(() => {
+    // This will be called by the screenAppCallback function
     window.updateRecordingInfo = (id, url) => {
-      console.log("Recording info received:", id, url);
+      console.log("Recording info received in React:", id, url);
       setRecordingId(id);
       setRecordingUrl(url);
+      setLoading(false);
+    };
+
+    // This will be called when the script loads successfully
+    window.onScreenAppLoaded = () => {
+      console.log("ScreenApp plugin loaded successfully");
+      setScriptLoaded(true);
+      setErrorMessage("");
+    };
+    
+    // This will be called if the script fails to load
+    window.onScreenAppError = (error) => {
+      console.error("ScreenApp plugin error:", error);
+      setErrorMessage(error);
+      setScriptLoaded(false);
+    };
+    
+    return () => {
+      // Clean up
+      window.updateRecordingInfo = () => {};
+      window.onScreenAppLoaded = () => {};
+      window.onScreenAppError = () => {};
     };
   }, []);
 
@@ -34,22 +61,23 @@ const App = () => {
         throw new Error("Please enter your ScreenApp token");
       }
 
-      if (typeof window.ScreenApp !== 'function') {
-        console.error("ScreenApp not loaded correctly. Current type:", typeof window.ScreenApp);
-        throw new Error("ScreenApp is not loaded correctly. Please refresh the page and try again.");
+      if (!scriptLoaded) {
+        throw new Error("ScreenApp plugin is still loading. Please wait.");
       }
 
       if (typeof window.loadScreenApp !== 'function') {
-        console.error("loadScreenApp function not found");
-        throw new Error("Plugin initialization function not found. Please refresh the page.");
+        throw new Error("ScreenApp plugin initialization function not found.");
       }
 
-      // Use the global function from index.html
-      window.loadScreenApp(token);
+      // Use the global function to start the recording
+      const success = window.loadScreenApp(token);
+      
+      if (!success) {
+        throw new Error("Failed to initialize ScreenApp. Please check your token and try again.");
+      }
     } catch (error) {
       console.error("Error:", error);
       setErrorMessage(error instanceof Error ? error.message : "Failed to start recording");
-    } finally {
       setLoading(false);
     }
   };
@@ -81,11 +109,23 @@ const App = () => {
           Click the button below to start recording your screen and audio.
         </p>
 
-        <button className="btn btn-primary w-100" onClick={handleStartRecording} disabled={loading}>
+        <button 
+          className="btn btn-primary w-100" 
+          onClick={handleStartRecording} 
+          disabled={loading || !scriptLoaded}
+        >
           {loading ? "Loading..." : "Start Recording"}
         </button>
 
-        {errorMessage && <div className="alert alert-danger mt-3">{errorMessage}</div>}
+        {!scriptLoaded && !errorMessage && (
+          <div className="alert alert-info mt-3">
+            Loading ScreenApp plugin... Please wait.
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="alert alert-danger mt-3">{errorMessage}</div>
+        )}
 
         {recordingId && (
           <div className="mt-4">

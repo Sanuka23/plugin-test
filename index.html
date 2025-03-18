@@ -4,46 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ScreenApp Plugin</title>
-    
-    <!-- ScreenApp Plugin Installation -->
-    <!-- Step 1: Add this script to your website's HTML -->
-    <!-- Current version: 6.22.0 -->
-    <script
-        charset="UTF-8" type="text/javascript"
-        src="https://screenapp.io/app/plugin-latest.bundle.js">
-    </script>
 </head>
 <body>
-    <!-- Step 2: Add the initialization code -->
-    <script>
-        // This function will be called when a recording is completed
-        function screenAppCallback({ id, url }) {
-            // You can customize this function to handle the recording
-            console.log('Recording completed!', { id, url });
-            
-            // Used for React state updates
-            if (window.updateRecordingInfo) {
-                window.updateRecordingInfo(id, url);
-            }
-        }
-
-        // Initialize the ScreenApp plugin with a custom token
-        // Original function is modified to accept a token parameter
-        function loadScreenApp(token) {
-            // Create a new instance with the provided token
-            const screenApp = new window.ScreenApp(token, screenAppCallback);
-            
-            // Mount the plugin to the specified container element
-            screenApp.mount("#screenapp-plugin");
-        }
-        
-        // Make the function available to React
-        window.loadScreenApp = loadScreenApp;
-    </script>
-    
     <!-- React Application -->
     <div id="root"></div>
     <script type="module" src="src/main.tsx"></script>
+    
+    <!-- ScreenApp Plugin Installation -->
+    <!-- Step 1: Add this script to your website's HTML -->
+    <script>
+        // This script handles loading the ScreenApp plugin properly
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded, initializing ScreenApp plugin loader");
+            
+            // Create script element
+            const script = document.createElement('script');
+            script.charset = "UTF-8";
+            script.type = "text/javascript";
+            script.src = "https://screenapp.io/plugin.min.js";  // Try basic version instead of bundle
+            
+            // When script loads, make callback and init function available
+            script.onload = function() {
+                console.log("ScreenApp plugin script loaded");
+                
+                // Setup callback for recording completion
+                window.screenAppCallback = function({ id, url }) {
+                    console.log('Recording completed!', { id, url });
+                    
+                    // Update React state
+                    if (window.updateRecordingInfo) {
+                        window.updateRecordingInfo(id, url);
+                    }
+                };
+                
+                // Set up initialization function
+                window.loadScreenApp = function(token) {
+                    try {
+                        console.log("Initializing ScreenApp with token:", token);
+                        console.log("ScreenApp constructor available:", typeof window.ScreenApp);
+                        
+                        const screenApp = new window.ScreenApp(token, window.screenAppCallback);
+                        screenApp.mount("#screenapp-plugin");
+                        return true;
+                    } catch (err) {
+                        console.error("ScreenApp initialization error:", err);
+                        return false;
+                    }
+                };
+                
+                // Signal to the React app that the plugin is ready
+                if (window.onScreenAppLoaded) {
+                    window.onScreenAppLoaded();
+                }
+            };
+            
+            // Handle errors
+            script.onerror = function() {
+                console.error("Failed to load ScreenApp plugin script");
+                if (window.onScreenAppError) {
+                    window.onScreenAppError("Failed to load plugin script");
+                }
+            };
+            
+            // Add script to document
+            document.body.appendChild(script);
+        });
+    </script>
     
     <!-- Step 3: Add this container where you want the recording interface to appear -->
     <div id="screenapp-plugin"></div>
