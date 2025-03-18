@@ -4,16 +4,16 @@ interface ScreenAppInstance {
 }
 
 export default class ScreenApp {
-  private apiKey: string;
+  private token: string;
   private parentElementSelector?: string;
   private finishRecordingCallback: (data: { id: string; url: string }) => void;
   private screenAppInstance?: ScreenAppInstance;
 
   constructor(
-    apiKey: string,
+    token: string,
     finishRecordingCallback: (data: { id: string; url: string }) => void
   ) {
-    this.apiKey = apiKey;
+    this.token = token;
     this.finishRecordingCallback = finishRecordingCallback;
   }
 
@@ -25,7 +25,7 @@ export default class ScreenApp {
         throw new Error("ScreenApp library not loaded.");
       }
 
-      this.screenAppInstance = new window.ScreenApp(this.apiKey, this.finishRecordingCallback);
+      this.screenAppInstance = new window.ScreenApp(this.token, this.finishRecordingCallback);
       await this.screenAppInstance.mount(this.parentElementSelector);
     } catch (error) {
       console.error("Error mounting plugin:", error);

@@ -48,3 +48,46 @@ export default tseslint.config({
   },
 })
 ```
+
+# ScreenApp Plugin Integration
+
+This project demonstrates the integration of the ScreenApp Plugin, a professional-grade video and audio recorder that can be embedded directly into a website or application.
+
+## Features
+
+- Professional-grade video and audio recording
+- Automatic uploads to ScreenApp account for processing
+- Transcription and analysis capabilities
+- White-labeling and custom branding options
+
+## Installation
+
+1. Clone this repository
+2. Install dependencies with `npm install`
+3. Start the development server with `npm run dev`
+
+## How It Works
+
+The application uses the ScreenApp Plugin (v6.22.0) to provide recording capabilities. When a user clicks the "Start Recording" button, the plugin is initialized and mounted to the specified container. After recording is completed, the callback function is executed, providing the recording ID and URL.
+
+## Implementation Details
+
+- The plugin is loaded from `https://screenapp.io/app/plugin-latest.bundle.js`
+- Users need to enter their own ScreenApp plugin token in the input field
+- Recordings are automatically uploaded to the associated ScreenApp account
+
+## Configuration
+
+If you need to use a specific version of the plugin instead of the latest version, you can update the script source in the `index.html` file to:
+
+```html
+<script
+  charset="UTF-8" type="text/javascript"
+  src="https://screenapp.io/app/plugin-6.22.0.bundle.js">
+</script>
+```
+
+## Security & Compatibility
+
+- The unique plugin token restricts usage to authorized domains only
+- The plugin maintains backward compatibility with all previous versions

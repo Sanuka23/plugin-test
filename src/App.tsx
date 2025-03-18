@@ -21,57 +21,27 @@ const App = () => {
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const screenAppRef = useRef<ScreenApp | null>(null);
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tokenFromURL = urlParams.get("token");
-    if (tokenFromURL) {
-      setToken(tokenFromURL);
-    }
-  }, []);
-
-  const loadScript = useCallback((): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const existingScript = document.querySelector("script[src='https://dev.screenapp.io/app/plugin-6.20.17.bundle.js']");
-      if (existingScript) {
-        resolve();
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = "https://dev.screenapp.io/app/plugin-6.20.17.bundle.js";
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Failed to load script"));
-      document.body.appendChild(script);
-    });
-  }, []);
-
   const finishRecordingCallback = useCallback(({ id, url }: { id: string; url: string }) => {
+    console.log('Recording completed!', { id, url });
     setRecordingId(id);
     setRecordingUrl(url);
   }, []);
 
-  const handleLoadPlugin = async () => {
+  const loadScreenApp = async () => {
     setLoading(true);
     setErrorMessage("");
 
     try {
       if (!token) {
-        throw new Error("Token is required to load the plugin.");
+        throw new Error("Please enter your ScreenApp token");
       }
 
-      await loadScript();
-      
       if (!window.ScreenApp) {
         throw new Error("ScreenApp script failed to load.");
       }
 
       screenAppRef.current = new ScreenApp(token, finishRecordingCallback);
       await screenAppRef.current.mount("#screenapp-plugin");
-
-      // Simulate successful recording for testing
-      setRecordingId("test-123");
-      setRecordingUrl("https://example.com/recording");
     } catch (error) {
       console.error("Error loading plugin:", error);
       setErrorMessage(error instanceof Error ? error.message : "Failed to load plugin");
@@ -86,18 +56,22 @@ const App = () => {
         <h2 className="text-center">ScreenApp Plugin Demo</h2>
 
         <div className="mb-3">
-          <label className="form-label">Enter Your Token:</label>
+          <label className="form-label">Your ScreenApp Token:</label>
           <input
             type="text"
             className="form-control"
-            placeholder="Enter your token"
+            placeholder="Enter your token (e.g., 67d9560fea74f53d0e986a99)"
             value={token}
             onChange={(e) => setToken(e.target.value)}
           />
         </div>
 
-        <button className="btn btn-primary w-100" onClick={handleLoadPlugin} disabled={loading}>
-          {loading ? "Loading..." : "Load Plugin"}
+        <p className="text-center mb-4">
+          Click the button below to start recording your screen and audio.
+        </p>
+
+        <button className="btn btn-primary w-100" onClick={loadScreenApp} disabled={loading}>
+          {loading ? "Loading..." : "Start Recording"}
         </button>
 
         {errorMessage && <div className="alert alert-danger mt-3">{errorMessage}</div>}
