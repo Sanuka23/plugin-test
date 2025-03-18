@@ -68,19 +68,27 @@ This project demonstrates the integration of the ScreenApp Plugin, a professiona
 
 ## How It Works
 
-The application uses the ScreenApp Plugin (v6.22.0) to provide recording capabilities. When a user clicks the "Start Recording" button, the plugin is initialized and mounted to the specified container. After recording is completed, the callback function is executed, providing the recording ID and URL.
+The application uses the ScreenApp Plugin (v6.22.0) to provide recording capabilities. When a user enters their token and clicks the "Start Recording" button, the plugin is initialized and mounted to the specified container. After recording is completed, the callback function is executed, providing the recording ID and URL.
 
 ## Implementation Details
 
 - The plugin is loaded from `https://screenapp.io/app/plugin-latest.bundle.js`
 - Users need to enter their own ScreenApp plugin token in the input field
 - Recordings are automatically uploaded to the associated ScreenApp account
+- The implementation follows the official ScreenApp Plugin integration guide
 
 ## Configuration
 
-If you need to use a specific version of the plugin instead of the latest version, you can update the script source in the `index.html` file to:
+The application is set up to use the latest version of the ScreenApp plugin. If you need to use a specific version instead, you can update the script source in the `index.html` file:
 
 ```html
+<!-- For users who want automatic updates (current implementation) -->
+<script
+  charset="UTF-8" type="text/javascript"
+  src="https://screenapp.io/app/plugin-latest.bundle.js">
+</script>
+
+<!-- For users who want a specific version -->
 <script
   charset="UTF-8" type="text/javascript"
   src="https://screenapp.io/app/plugin-6.22.0.bundle.js">
@@ -91,3 +99,4 @@ If you need to use a specific version of the plugin instead of the latest versio
 
 - The unique plugin token restricts usage to authorized domains only
 - The plugin maintains backward compatibility with all previous versions
+- Version 6.22.0 is the latest stable release with all features and security updates

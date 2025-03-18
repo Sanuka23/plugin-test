@@ -6,6 +6,7 @@
     <title>ScreenApp Plugin</title>
     
     <!-- ScreenApp Plugin Installation -->
+    <!-- Step 1: Add this script to your website's HTML -->
     <!-- Current version: 6.22.0 -->
     <script
         charset="UTF-8" type="text/javascript"
@@ -15,5 +16,23 @@
 <body>
     <div id="root"></div>
     <script type="module" src="src/main.tsx"></script>
+    
+    <!-- Step 2: Add the initialization code -->
+    <script>
+        // This function will be called when a recording is completed
+        window.screenAppCallback = function({ id, url }) {
+            // You can customize this function to handle the recording
+            console.log('Recording completed!', { id, url });
+        };
+
+        // Initialize the ScreenApp plugin
+        window.loadScreenApp = function(token) {
+            // Create a new instance with the provided token
+            const screenApp = new window.ScreenApp(token, window.screenAppCallback);
+            
+            // Mount the plugin to the specified container element
+            screenApp.mount("#screenapp-plugin");
+        };
+    </script>
 </body>
 </html>

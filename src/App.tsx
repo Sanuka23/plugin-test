@@ -1,15 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import ScreenApp from "./services/ScreenApp";
 
 declare global {
   interface Window {
-    ScreenApp: {
-      new (token: string, callback: (data: { id: string; url: string }) => void): {
-        mount: (selector: string) => Promise<void>;
-        unMount: () => void;
-      };
-    };
+    ScreenApp: any;
+    loadScreenApp: (token: string) => void;
+    screenAppCallback: (data: { id: string; url: string }) => void;
   }
 }
 
@@ -19,15 +15,29 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
-  const screenAppRef = useRef<ScreenApp | null>(null);
 
-  const finishRecordingCallback = useCallback(({ id, url }: { id: string; url: string }) => {
-    console.log('Recording completed!', { id, url });
-    setRecordingId(id);
-    setRecordingUrl(url);
+  // Override the global callback to update our state
+  useEffect(() => {
+    const originalCallback = window.screenAppCallback;
+    
+    window.screenAppCallback = ({ id, url }: { id: string; url: string }) => {
+      // Call the original callback
+      if (originalCallback) {
+        originalCallback({ id, url });
+      }
+      
+      // Update our state
+      setRecordingId(id);
+      setRecordingUrl(url);
+    };
+    
+    // Cleanup
+    return () => {
+      window.screenAppCallback = originalCallback;
+    };
   }, []);
 
-  const loadScreenApp = async () => {
+  const handleStartRecording = async () => {
     setLoading(true);
     setErrorMessage("");
 
@@ -36,12 +46,12 @@ const App = () => {
         throw new Error("Please enter your ScreenApp token");
       }
 
-      if (!window.ScreenApp) {
+      if (!window.loadScreenApp) {
         throw new Error("ScreenApp script failed to load.");
       }
 
-      screenAppRef.current = new ScreenApp(token, finishRecordingCallback);
-      await screenAppRef.current.mount("#screenapp-plugin");
+      // Use the global function from index.html
+      window.loadScreenApp(token);
     } catch (error) {
       console.error("Error loading plugin:", error);
       setErrorMessage(error instanceof Error ? error.message : "Failed to load plugin");
@@ -62,7 +72,7 @@ const App = () => {
             className="form-control"
             placeholder="Enter your token (e.g., 67d9560fea74f53d0e986a99)"
             value={token}
-            onChange={(e) => setToken(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setToken(e.target.value)}
           />
         </div>
 
@@ -70,7 +80,7 @@ const App = () => {
           Click the button below to start recording your screen and audio.
         </p>
 
-        <button className="btn btn-primary w-100" onClick={loadScreenApp} disabled={loading}>
+        <button className="btn btn-primary w-100" onClick={handleStartRecording} disabled={loading}>
           {loading ? "Loading..." : "Start Recording"}
         </button>
 
