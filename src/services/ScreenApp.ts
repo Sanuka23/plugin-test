@@ -3,10 +3,6 @@ interface ScreenAppInstance {
   unMount: () => void;
 }
 
-interface ScreenAppConstructor {
-  new (token: string, callback: (data: { id: string; url: string }) => void): ScreenAppInstance;
-}
-
 export default class ScreenApp {
   private token: string;
   private parentElementSelector?: string;
