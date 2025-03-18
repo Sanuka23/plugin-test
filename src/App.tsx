@@ -6,7 +6,6 @@ declare global {
     ScreenApp: any;
     loadScreenApp: (token: string) => boolean;
     screenAppCallback: (data: { id: string; url: string }) => void;
-    initScreenApp: () => void;
   }
 }
 
@@ -21,41 +20,29 @@ const App = () => {
   // Check if the script is loaded
   useEffect(() => {
     const checkScriptLoaded = () => {
-      if (typeof window.ScreenApp !== 'undefined') {
-        console.log("ScreenApp script is loaded");
+      if (typeof window.ScreenApp === 'function') {
+        console.log("ScreenApp script is loaded and ready");
         setScriptLoaded(true);
         return true;
       }
       return false;
     };
 
-    // Check initially
-    if (!checkScriptLoaded()) {
-      // Set up a listener for the script load event
-      const onScriptLoad = () => {
-        checkScriptLoaded();
-      };
-
-      // Try to find the script element
-      const scriptElement = document.getElementById('screenapp-script');
-      if (scriptElement) {
-        scriptElement.addEventListener('load', onScriptLoad);
-      }
-
-      // Also check periodically
-      const interval = setInterval(() => {
-        if (checkScriptLoaded()) {
-          clearInterval(interval);
-        }
-      }, 1000);
-
-      return () => {
-        clearInterval(interval);
-        if (scriptElement) {
-          scriptElement.removeEventListener('load', onScriptLoad);
-        }
-      };
+    // Check immediately
+    if (checkScriptLoaded()) {
+      return;
     }
+
+    // Set up an interval to check periodically
+    const interval = setInterval(() => {
+      if (checkScriptLoaded()) {
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   // Override the global callback to update our state
@@ -89,14 +76,20 @@ const App = () => {
     const newScript = document.createElement('script');
     newScript.id = 'screenapp-script';
     newScript.charset = 'UTF-8';
-    newScript.src = 'https://screenapp.io/app/plugin-latest.bundle.js';
+    newScript.type = 'text/javascript';
+    newScript.src = 'https://screenapp.io/app/plugin-6.22.0.bundle.js';
+    
     newScript.onload = () => {
-      if (window.initScreenApp) {
-        window.initScreenApp();
-        setScriptLoaded(true);
-        setErrorMessage("");
-      }
+      setTimeout(() => {
+        if (typeof window.ScreenApp === 'function') {
+          setScriptLoaded(true);
+          setErrorMessage("");
+        } else {
+          setErrorMessage("Script loaded but ScreenApp constructor not found");
+        }
+      }, 500); // Give the script a moment to initialize
     };
+    
     document.body.appendChild(newScript);
   };
 
@@ -109,7 +102,7 @@ const App = () => {
         throw new Error("Please enter your ScreenApp token");
       }
 
-      if (!scriptLoaded || typeof window.loadScreenApp !== 'function') {
+      if (!scriptLoaded || typeof window.ScreenApp !== 'function') {
         throw new Error("ScreenApp script not loaded correctly. Try reloading.");
       }
 
